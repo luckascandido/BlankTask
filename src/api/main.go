@@ -9,7 +9,13 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
+type Application struct {
+	logger echo.Logger
+	server *echo.Echo
+}
+
 func main() {
+
 	e := echo.New()
 	err := godotenv.Load()
 	if err != nil {
