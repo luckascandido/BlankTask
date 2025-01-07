@@ -10,6 +10,7 @@ import (
 	"gorm.io/gorm"
 )
 
+// Estrutura de importação de variaveis de ambiente.
 type Config struct {
 	PostgresHost     string `env:"POSTGRES_HOST" envDefault:"localhost"`
 	DbPort           string `env:"DB_PORT" envDefault:"5432"`
@@ -36,6 +37,7 @@ func Mypg() (*gorm.DB, error) {
 	if err != nil {
 		return nil, fmt.Errorf("erro ao obter banco de dados subjacente: %w", err)
 	}
+	// fecha conexão com o banco.
 	defer func() {
 		if err := sqlDB.Close(); err != nil {
 			log.Println("Error closing database connection:", err)
