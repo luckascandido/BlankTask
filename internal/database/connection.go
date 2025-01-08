@@ -1,11 +1,13 @@
-package common
+package database
 
 import (
+	"context"
 	"fmt"
 	"log"
 
 	"github.com/caarlos0/env"
 	_ "github.com/lib/pq"
+
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
@@ -19,7 +21,7 @@ type Config struct {
 	PostgresDB       string `env:"POSTGRES_DB"`
 }
 
-func Mypg() (*gorm.DB, error) {
+func Mypg(ctx context.Context) (*gorm.DB, error) {
 	// carrega as variaveis do banco de dados
 	cfg := Config{}
 	if err := env.Parse(&cfg); err != nil {
@@ -27,7 +29,12 @@ func Mypg() (*gorm.DB, error) {
 	}
 
 	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s", cfg.PostgresHost, cfg.PostgresUser, cfg.PostgresPassword, cfg.PostgresDB, cfg.DbPort)
-	// Faz a conexão com o banco
+	// Faz a conexão com o banco~
+
+	// analisa se deve fechar a conexão com o banco.
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
 		return nil, fmt.Errorf("erro ao abrir conexão com o banco: %w", err)
@@ -37,13 +44,8 @@ func Mypg() (*gorm.DB, error) {
 	if err != nil {
 		return nil, fmt.Errorf("erro ao obter banco de dados subjacente: %w", err)
 	}
-	// fecha conexão com o banco.
-	defer func() {
-		if err := sqlDB.Close(); err != nil {
-			log.Println("Error closing database connection:", err)
-		}
-	}()
-	err = sqlDB.Ping()
+
+	err = sqlDB.PingContext(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("erro ao pingar o banco de dados: %w", err)
 	}

@@ -1,8 +1,10 @@
 package main
 
 import (
-	"blanktask/common"
+	"blanktask/internal/database"
 	"blanktask/src/api/handlers"
+	Appmiddleware "blanktask/src/api/middleware"
+	"context"
 
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
@@ -18,8 +20,9 @@ type Application struct {
 func main() {
 
 	e := echo.New()
+	ctx := context.Background()
 	//chama a conexão com o banco
-	db, err := common.Mypg()
+	db, err := database.Mypg(ctx)
 	if err != nil {
 		e.Logger.Fatal(err.Error())
 	}
@@ -33,10 +36,15 @@ func main() {
 		server:  e,
 		handler: h,
 	}
+	// Carrega as migraçôes
+	if err := database.Migration_up(ctx); err != nil {
+		e.Logger.Fatal("Erro durante a migração:", err)
+	}
 	//Pasaa porta para ativar o endpoints
 	e.Use(middleware.LoggerWithConfig(middleware.LoggerConfig{
 		Format: "method=${method}, uri=${uri}, status=${status}\n",
 	}))
+	e.Use(Appmiddleware.CustomMiddleware)
 	app.routes(h)
 
 	//porta do servidor
